@@ -280,13 +280,13 @@ parentContent=function(){let h=_parentContent();if(state.parentStep===0){const p
 /* 7 Links that open a role or a page: ?role=owner|office|field  ?show=money|insurance|documents|reports|review|child|pay */
 (function(){const u=new URLSearchParams(location.search),r={owner:'Owner',office:'Office',field:'Field',hygienist:'Field'}[(u.get('role')||'').toLowerCase()];if(r)state.role=r})();
 
-/* 8 Back arrow. Remembers the screens (and pop-ups) you came through, shows a Back button, and follows the browser's or phone's own back button. */
-let trail=[],lastLoc=null,goingBack=false,resetTrail=false,modalTrail=[],modalNow=null,pendingOpen=null;
+/* 8 Back arrow. Nothing to go back to on the screen you started on, however you got back there. Remembers the screens (and pop-ups) you came through, shows a Back button, and follows the browser's or phone's own back button. */
+let trail=[],lastLoc=null,startLoc=null,goingBack=false,resetTrail=false,modalTrail=[],modalNow=null,pendingOpen=null;
 const backIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>';
 function locOf(){return {page:state.page,school:state.school,tab:state.tab,filter:state.filter,query:state.query,report:state.report,parentStep:state.parentStep,role:state.role}}
 function modalIsOpen(){return document.getElementById('modalroot').innerHTML!==''}
 function paintBack(){const bar=document.querySelector('.topbar');if(bar&&trail.length&&!bar.querySelector('.backbtn'))bar.insertAdjacentHTML('afterbegin',`<button class="backbtn" onclick="backOne()" aria-label="Go back to the last screen">${backIcon}<span>Back</span></button>`)}
-function trackScreen(){const now=locOf();if(resetTrail||(lastLoc&&lastLoc.role!==now.role)){trail=[];resetTrail=false}else if(lastLoc&&!goingBack&&(lastLoc.page!==now.page||lastLoc.school!==now.school)){lastLoc.y=window.scrollY;trail.push(lastLoc);if(trail.length>30)trail.shift()}lastLoc=now;paintBack();syncHistory()}
+function trackScreen(){const now=locOf();if(resetTrail||(lastLoc&&lastLoc.role!==now.role)){trail=[];resetTrail=false}else if(lastLoc&&!goingBack&&(lastLoc.page!==now.page||lastLoc.school!==now.school)){lastLoc.y=window.scrollY;trail.push(lastLoc);if(trail.length>30)trail.shift()}if(!startLoc)startLoc=now;if(now.page===startLoc.page&&now.school===startLoc.school)trail=[];lastLoc=now;paintBack();syncHistory()}
 const _renderBack=render;render=function(){_renderBack();trackScreen()};
 const _renderParentBack=renderParent;renderParent=function(){_renderParentBack();trackScreen()};
 const _applySnapshotBack=applyDemoSnapshot;applyDemoSnapshot=function(snapshot){resetTrail=true;_applySnapshotBack(snapshot)};
