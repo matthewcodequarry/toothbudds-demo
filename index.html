@@ -75,6 +75,10 @@ body.phone-preview>#chatroot{display:none}
 @media(max-height:580px){.chat-panel{top:8px;bottom:8px;max-height:none;height:auto}.chat-launcher{z-index:30}}
 @media print{#chatroot{display:none!important}}
 
+.backbtn{display:inline-flex;align-items:center;gap:7px;flex-shrink:0;padding:8px 13px 8px 10px;min-height:36px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--blue);font-size:13px;font-weight:550}
+.backbtn:hover{background:var(--pale)}.backbtn svg{width:17px;height:17px}.topbar>.backbtn+*{margin-right:auto}
+.drawerhead .back{padding-bottom:10px;font-size:13px}
+@media(max-width:760px){.topbar>.backbtn~.mobile-title{width:auto;flex:1}.backbtn{min-height:44px}}
 </style></head><body><div class="preview-tools" id="previewtools"><strong>TOOTH BUDDS · DESIGN PREVIEW</strong><div class="preview-switch" role="group" aria-label="Preview layout"><button id="desktop-preview" aria-pressed="true" onclick="setPreviewMode('desktop')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M12 17v4M8 21h8"/></svg>Desktop</button><button id="phone-preview" aria-pressed="false" onclick="setPreviewMode('phone')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 5h4M11 19h2"/></svg>iPhone</button></div></div><section class="phone-stage" id="phonestage" hidden><p class="phone-caption">iPhone preview · 390px wide · Everything is clickable</p><div class="phone-frame"><iframe id="phoneframe" title="Interactive iPhone preview"></iframe></div></section><div id="app"></div><div id="modalroot"></div><div id="toastroot" aria-live="polite"></div><div id="chatroot"></div><script>
 const embeddedPreview=window.self!==window.top;
 // On a real phone the page is already phone-sized, so skip the Desktop / iPhone switch.
@@ -275,6 +279,32 @@ parentContent=function(){let h=_parentContent();if(state.parentStep===0){const p
 
 /* 7 Links that open a role or a page: ?role=owner|office|field  ?show=money|insurance|documents|reports|review|child|pay */
 (function(){const u=new URLSearchParams(location.search),r={owner:'Owner',office:'Office',field:'Field',hygienist:'Field'}[(u.get('role')||'').toLowerCase()];if(r)state.role=r})();
+
+/* 8 Back arrow. Remembers the screens (and pop-ups) you came through, shows a Back button, and follows the browser's or phone's own back button. */
+let trail=[],lastLoc=null,goingBack=false,resetTrail=false,modalTrail=[],modalNow=null,pendingOpen=null;
+const backIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>';
+function locOf(){return {page:state.page,school:state.school,tab:state.tab,filter:state.filter,query:state.query,report:state.report,parentStep:state.parentStep,role:state.role}}
+function modalIsOpen(){return document.getElementById('modalroot').innerHTML!==''}
+function paintBack(){const bar=document.querySelector('.topbar');if(bar&&trail.length&&!bar.querySelector('.backbtn'))bar.insertAdjacentHTML('afterbegin',`<button class="backbtn" onclick="backOne()" aria-label="Go back to the last screen">${backIcon}<span>Back</span></button>`)}
+function trackScreen(){const now=locOf();if(resetTrail||(lastLoc&&lastLoc.role!==now.role)){trail=[];resetTrail=false}else if(lastLoc&&!goingBack&&(lastLoc.page!==now.page||lastLoc.school!==now.school)){lastLoc.y=window.scrollY;trail.push(lastLoc);if(trail.length>30)trail.shift()}lastLoc=now;paintBack();syncHistory()}
+const _renderBack=render;render=function(){_renderBack();trackScreen()};
+const _renderParentBack=renderParent;renderParent=function(){_renderParentBack();trackScreen()};
+const _applySnapshotBack=applyDemoSnapshot;applyDemoSnapshot=function(snapshot){resetTrail=true;_applySnapshotBack(snapshot)};
+const _modalBack=modal;modal=function(title,body,footer,drawer){
+ if(modalNow&&modalIsOpen()&&!goingBack){const seen=modalTrail.findIndex(m=>m.title===title);if(seen>-1)modalTrail.length=seen;else if(modalNow.title!==title)modalTrail.push(modalNow)}
+ modalNow={title,reopen:pendingOpen,args:[title,body,footer,drawer]};_modalBack(title,body,footer,drawer);
+ if(modalTrail.length)document.querySelector('#modalroot .drawerhead>div')?.insertAdjacentHTML('afterbegin','<button class="back" onclick="backOne()">← Back</button>');
+ syncHistory()};
+const _closeModalBack=closeModal;closeModal=function(){_closeModalBack();modalTrail=[];modalNow=null;syncHistory()};
+['openAdult','openAsk','openCalendar','openChild','openClaim','openDocument','openDonor','openEligibility','openFollowup','openGrant','openMissed','openPayment','openRemit','openSchoolInfo','openSearch','openSlip','openTeaching','openUpload'].forEach(n=>{const f=window[n];if(typeof f!=='function')return;window[n]=function(...a){const before=pendingOpen;pendingOpen=()=>window[n](...a);try{return f.apply(this,a)}finally{pendingOpen=before}}});
+function backOne(){
+ if(modalIsOpen()){const prev=modalTrail.pop();if(!prev){closeModal();return}goingBack=true;try{prev.reopen?prev.reopen():modal(...prev.args)}finally{goingBack=false}return}
+ const l=trail.pop();if(!l)return;goingBack=true;try{Object.assign(state,{page:l.page,school:l.school,tab:l.tab,filter:l.filter,query:l.query,report:l.report,parentStep:l.parentStep});render()}finally{goingBack=false}window.scrollTo(0,l.y||0)}
+/* Keep the browser's own back button in step: one history entry for each step you can go back. */
+let histAt=0,histTimer=null,histSkip=false;
+function backDepth(){return trail.length+(modalIsOpen()?modalTrail.length+1:0)}
+function syncHistory(){if(embeddedPreview||histTimer)return;histTimer=setTimeout(()=>{histTimer=null;const d=backDepth();try{while(histAt<d)history.pushState({tb:++histAt},'');if(histAt>d){histSkip=true;history.go(d-histAt);histAt=d}}catch(e){}},0)}
+if(!embeddedPreview){try{history.replaceState({tb:0},'')}catch(e){}window.addEventListener('popstate',e=>{if(histSkip){histSkip=false;return}histAt=(e.state&&e.state.tb)||0;let guard=40;while(backDepth()>histAt&&guard--)backOne();syncHistory()})}
 
 if(new URLSearchParams(location.search).get('view')==='parent')state.page='parent';render();
 (function(){const s=new URLSearchParams(location.search).get('show');if(!s||embeddedPreview)return;if(s==='money'||s==='reports'||s==='review'){navigate(s)}else if(s==='insurance'){openSchool(0);state.tab='eligibility';render()}else if(s==='documents'){openSchool(0);state.tab='documents';render()}else if(s==='child'){openSchool(0);openChild(0)}else if(s==='pay'){navigate('money');openPayment(0)}})();
