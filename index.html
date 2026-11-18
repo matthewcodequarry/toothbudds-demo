@@ -40,7 +40,7 @@ html:not([data-embedded]) .sidebar{top:58px;height:calc(100vh - 58px)}
 .phone-stage{padding:26px 16px 40px;min-height:calc(100vh - 58px);background:radial-gradient(ellipse at top,#e5f2f7,#f5f8fa 70%);text-align:center}
 .phone-stage[hidden]{display:none}
 .phone-caption{font-size:12px;color:var(--muted);margin-bottom:16px}
-.phone-frame{box-sizing:content-box;width:390px;height: min(844px,calc(100dvh - 160px));min-height:540px;max-width:100%;margin:0 auto;border:7px solid #153e52;border-radius:38px;overflow:hidden;background:white;box-shadow:0 24px 70px #103d5220}
+.phone-frame{box-sizing:content-box;width:390px;height:844px;max-width:100%;margin:0 auto;transform-origin:top center;border:7px solid #153e52;border-radius:38px;overflow:hidden;background:white;box-shadow:0 24px 70px #103d5220}
 .phone-frame iframe{display:block;width:100%;height:100%;border:0;background:var(--bg)}
 html[data-embedded] .preview-tools,html[data-embedded] .phone-stage{display:none}
 body.phone-preview>#app,body.phone-preview>#modalroot,body.phone-preview>#toastroot{display:none}
@@ -206,8 +206,12 @@ function setPreviewMode(mode){
  document.getElementById('phonestage').hidden=mode!=='phone';
  document.getElementById('desktop-preview').setAttribute('aria-pressed',String(mode==='desktop'));
  document.getElementById('phone-preview').setAttribute('aria-pressed',String(mode==='phone'));
+ fitPhone();
  window.scrollTo(0,0);
 }
+/* Keep the preview a true iPhone shape (390 × 844) and shrink the whole phone to fit the window, not just its height. */
+function fitPhone(){const f=document.querySelector('.phone-frame');if(!f)return;const s=innerWidth>760?Math.max(.55,Math.min(1,(innerHeight-150)/858)):1;f.style.transform=s<1?`scale(${s})`:'';f.style.marginBottom=s<1?`${-858*(1-s)}px`:''}
+addEventListener('resize',fitPhone);
 function labelMobileTables(){document.querySelectorAll('table').forEach(table=>{const headings=[...table.querySelectorAll('thead th')].map(th=>th.textContent.trim());table.querySelectorAll('tbody tr').forEach(row=>{[...row.children].forEach((cell,i)=>cell.setAttribute('data-label',headings[i]||''))})})}
 new MutationObserver(labelMobileTables).observe(document.getElementById('app'),{childList:true,subtree:true});
 new MutationObserver(labelMobileTables).observe(document.getElementById('modalroot'),{childList:true,subtree:true});
