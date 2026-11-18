@@ -324,6 +324,7 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .cvcontact{display:flex;align-items:center;gap:10px;padding:16px 0;border-top:1px solid var(--line)}
 .cvcontact:first-child{border-top:0;padding-top:0}
 .cvcontact a.btn{text-decoration:none}
+.perm.cvno{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='8'%3E%3Cpath d='M0 4 Q4.5 0 9 4 T18 4' fill='none' stroke='%23b13d4c' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x center/18px 8px content-box,#f1f4f6}
 .cvprinthead{display:none}
 @media(max-width:760px){.cvhead h1{font-size:24px}.cvhero .herotext{padding:18px}.cvfact strong{font-size:24px}.cvrow{padding:13px 16px}.cvtabs{margin-bottom:14px}}
 @media(max-width:760px){html[data-role=Office] .chat-launcher{display:none}}
@@ -374,7 +375,7 @@ ${g?`<div class="cvchips" aria-label="Teacher">${chip(!t,'All '+cvGradeName(g),p
 <div class="cvprinthead"><b>${cvSchool.name} · ${tabs.find(x=>x[0]===v.tab)[1]} · ${where}</b></div>
 <section class="panel">${list.length?list.map(k=>no?`<div class="cvrow"><div class="grow"><strong>${k.name}</strong><span class="muted small">${k.teacher} · ${cvGradeName(k.grade)}</span></div>${badge('Parent said no')}</div>`:`<button class="cvrow" onclick="openKid(${k.id})"><div class="grow"><strong>${k.name}</strong><span class="muted small">${k.teacher} · ${cvGradeName(k.grade)}${v.tab==='seen'?(v.now.includes(k.id)?' · reviewed today':' · reviewed Mon, Nov 9'):''}</span></div>${k.health?badge('Health note','red'):''}<span class="go">›</span></button>`).join(''):`<div class="empty"><div class="bigcheck">${icons.check}</div><h2>${v.tab==='left'?'Everyone here has been seen.':'Nobody in this group yet.'}</h2><p class="muted">Pick another grade or teacher above.</p></div>`}</section>
 <p class="footnote">All names are made up. In the real app this list comes from the returned forms.</p></div>`}
-function openKid(id){const k=cvKids[id],seen=cvIsSeen(k),perm=(name,ok)=>`<div class="perm ${ok?'':'no'}"><span>${name}</span><b>${ok?'✓ Yes':'No'}</b></div>`;
+function openKid(id){const k=cvKids[id],seen=cvIsSeen(k),perm=(name,ok)=>`<div class="perm ${ok?'':'no cvno'}"><span>${name}</span><b>${ok?'✓ Yes':'No'}</b></div>`;
  modal(k.name,`<div class="details"><div class="detail">Teacher<b>${k.teacher}</b></div><div class="detail">Grade<b>${cvGradeName(k.grade)}</b></div><div class="detail">Birthday<b>${k.dob}</b></div><div class="detail">Consent<b>${k.phone?'Phone form':'Paper form'} · signed</b></div></div>
 <div class="eyebrow">Health history</div>${k.health?`<div class="notice red">${icons.alert}<div><b>${k.health}</b><br>Tell the hygienist before the child sits down.</div></div>`:`<div class="notice">${icons.check}<div><b>Nothing reported.</b><br>The parent answered No to every health question.</div></div>`}
 <div class="eyebrow" style="margin-top:6px">Can have today</div><div class="perms">${perm('Screening',true)}${perm('Cleaning',true)}${perm('Fluoride',k.fl)}${perm('Sealants',k.se)}</div>
