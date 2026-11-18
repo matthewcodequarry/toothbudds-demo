@@ -407,7 +407,7 @@ const _applySnapshotBack=applyDemoSnapshot;applyDemoSnapshot=function(snapshot){
 const _modalBack=modal;modal=function(title,body,footer,drawer){
  if(modalNow&&modalIsOpen()&&!goingBack){const seen=modalTrail.findIndex(m=>m.title===title);if(seen>-1)modalTrail.length=seen;else if(modalNow.title!==title)modalTrail.push(modalNow)}
  modalNow={title,reopen:pendingOpen,args:[title,body,footer,drawer]};_modalBack(title,body,footer,drawer);
- if(modalTrail.length)document.querySelector('#modalroot .drawerhead>div')?.insertAdjacentHTML('afterbegin','<button class="back" onclick="backOne()">← Back</button>');
+ if(modalTrail.length||state.role==='Office')document.querySelector('#modalroot .drawerhead>div')?.insertAdjacentHTML('afterbegin','<button class="back" onclick="backOne()">← Back</button>');
  syncHistory()};
 const _closeModalBack=closeModal;closeModal=function(){_closeModalBack();modalTrail=[];modalNow=null;syncHistory()};
 ['openKid','openClassrooms','openContacts','openAdult','openAsk','openCalendar','openChild','openClaim','openDocument','openDonor','openEligibility','openFollowup','openGrant','openMissed','openPayment','openRemit','openSchoolInfo','openSearch','openSlip','openTeaching','openUpload'].forEach(n=>{const f=window[n];if(typeof f!=='function')return;window[n]=function(...a){const before=pendingOpen;pendingOpen=()=>window[n](...a);try{return f.apply(this,a)}finally{pendingOpen=before}}});
